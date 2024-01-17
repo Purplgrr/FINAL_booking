@@ -1,0 +1,195 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="/static/css/static.css" />
+        <title> Администрирование </title>
+
+        {% macro render_select(select_name, vis_field, val_field, combo_box, id) %}           
+        <select name='{{select_name}}'>          
+            {% for i in range(len(combo_box)) %}   
+                <option 
+                    value="{{ combo_box.loc[i, val_field] }}" 
+                    {% if combo_box.loc[i, val_field] == id %} selected {% endif %}>
+                    {{combo_box.loc[i, vis_field]}}
+                </option>          
+                    {% endfor %}         
+        </select> 
+        {% endmacro %}
+
+        {% macro render_multiple_select(select_name, vis_field, val_field, combo_box, selected_id) %}
+            <select name='{{select_name}}' class='select_table' size='{{len(combo_box)}}' multiple>          
+                {% for i in range(len(combo_box)) %}   
+                    <option 
+                        value="{{ combo_box.loc[i, val_field] }}" 
+                        {% if combo_box.loc[i, val_field] in selected_id %} selected {% endif %}>
+                        {{combo_box.loc[i, vis_field]}}
+                    </option>          
+                {% endfor %}         
+            </select> 
+        {% endmacro %}
+
+        {% macro render_booking(table_name, df_booking, booking_id) %}
+            <p>
+                <h3>{{table_name}}</h3>
+            </p>
+            <table class="table">
+                <tr>
+                    {% for name in df_booking.dtypes.index %}
+                        {% if name != 'booking_id' %}
+                            <th>{{ name }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                <tbody>
+                    {% for i in range(len(df_booking)) %}
+                        <tr>
+                            <td>{{ df_booking.loc[i, 'Номер'] }}</td>
+                            <td>{{ df_booking.loc[i, 'Отель'] }}</td>
+                            <td>{{ df_booking.loc[i, 'Тип'] }}</td>
+                            <td>{{ df_booking.loc[i, 'Вместимость'] }}</td>
+                            <td>{{ df_booking.loc[i, 'Цена'] }}</td>
+                            <td>{{ df_booking.loc[i, 'Дата въезда'] }}</td>
+                            <td>{{ df_booking.loc[i, 'Дата выезда'] }}</td>
+                            {% if df_booking.loc[i, 'Дата начала проживания'] %}
+                                <td>{{ df_booking.loc[i, 'Дата начала проживания'] }}</td>
+                            {% else %}
+                                <td> - 
+                                    {% if df_booking.loc[i, 'Статус'] == 'забронировано' and today_date >= df_booking.loc[i, 'Дата въезда'] and today_date <= df_booking.loc[i, 'Дата выезда'] %}
+                                    <form action="" method="post">
+                                        <input type="text" name="booking_id" value="{{df_booking.loc[i, 'booking_id']}}" hidden />
+                                        <input type="submit" name="set_live_in_date" value="Заселить" />
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                            {% if df_booking.loc[i, 'Дата конца проживания'] %}
+                                <td>{{ df_booking.loc[i, 'Дата конца проживания'] }}
+                                </td>
+                            {% else %}
+                                <td> - 
+                                    {% if df_booking.loc[i, 'Статус'] == 'проживают' %}
+                                    <form action="" method="post">
+                                        <input type="text" name="booking_id" value="{{df_booking.loc[i, 'booking_id']}}" hidden />
+                                        <input type="submit" name="set_live_out_date" value="Выселить" />
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                            <td>
+                                {% if df_booking.loc[i, 'Статус'] == 'забронировано' %}
+                                    {% if booking_id == df_booking.loc[i, 'booking_id'] and is_edit %}
+                                        <form action="" method="post">
+                                            <input type="text" name="booking_id" value="{{df_booking.loc[i, 'booking_id']}}" hidden />
+                                            {{ render_multiple_select('additional_services_id', 'additional_services_name', 'additional_services_id', df_services, selected_services) }}<br>
+                                            <input type="submit" name="services_save" value="Подтвердить" />
+                                        </form>
+                                    {% else %}
+                                        <form action="" method="post">
+                                            <input type="text" name="booking_id" value="{{df_booking.loc[i, 'booking_id']}}" hidden />
+                                            {{ df_booking.loc[i, 'Доп. услуги'] }}<br>
+                                            <input type="submit" name="services_next" value="Редактировать" />
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    {{ df_booking.loc[i, 'Доп. услуги'] }}
+                                {% endif %}
+                            </td>
+                            <td>{{ df_booking.loc[i, 'Предварительная стоимость'] }}</td>
+                            {% if df_booking.loc[i, 'Фактическая стоимость'] %}
+                                <td>{{ df_booking.loc[i, 'Фактическая стоимость'] }}</td>
+                            {% else %}
+                                <td> - </td>
+                            {% endif %}
+                            {% if df_booking.loc[i, 'Статус'] == 'забронировано' %}
+                                <form action="" method="post">
+                                    <input type="text" name="booking_id" value="{{df_booking.loc[i, 'booking_id']}}" hidden />
+                                    <td>
+                                        {{ df_booking.loc[i, 'Статус'] }}<br>
+                                        <input type="submit" name="cancel_booking" value="Отмена" />
+                                    </td>
+                                </form>
+                            {% else %}
+                                <td>{{ df_booking.loc[i, 'Статус'] }}</td>
+                            {% endif %}
+
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endmacro %}
+
+        {% macro render_table(table_name, relation) %}
+            <p>
+                <b>{{table_name}} </b>
+            </p>
+            {% set n = len(relation) %}
+            <table class="table">
+                    <tr>
+                        {% for name in relation.dtypes.index %}
+                            <th>{{name}}</th>
+                        {% endfor %}
+                    </tr>
+                <tbody>
+                    {% for i in range(n) %}
+                        <tr>
+                            {% for name in relation.dtypes.index %}
+                                <td>
+                                    {{ relation.loc[i, name] }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endmacro %}
+
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li>
+                    <a href = '{{ url_for("index") }}'>
+                        Поиск номера
+                    </a>
+                </li>
+                <li class="active">
+                    <a href='{{url_for("show")}}'>
+                        Администрирование
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <p>
+            <div class="flex row">
+                <p>
+                    <form action='' method ="post">
+                        Гость:
+                            {{ render_select('user_id', 'user_name', 'user_id', df_user, user_id) }}
+                        <input type="submit" name="show" value="Найти">
+                    </form>
+                </p>
+                <form action = {{ url_for("new_user") }} method = "post">
+                    <input type = "submit" value = "Добавить">
+                </form>
+            </div>
+            <p>
+                {{ render_booking('Бронирование:', df_booking, booking_id) }}
+            </p>
+            <p>
+                <form action = '' method = "post">
+                    <label>От:
+                        <input type="date" name="date_from" min="{{min_date}}" value="{{date_from}}">
+                    </label>
+                    <label>До:
+                        <input type="date" name="date_to" min="{{min_date}}" value="{{date_to}}">
+                    </label>
+                    <input type="submit" name='find' value="Выбрать даты">
+                </form>
+                <p>
+                    {{ render_table('Занятость номеров:', df_room_status) }}
+                </p>
+            </p>
+        </p>
+        <p></p>
+    </body>
+</html>

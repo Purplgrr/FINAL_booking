@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="/static/css/static.css" />
+        <title> Поиск номеров </title>
+
+        {% macro render_checkboxes(relation, name, vis_field, val_field, selected_id) %}
+            {% for i in range(len(relation))%}
+                <div class="flex row">
+                    {{relation.loc[i, vis_field]}}
+                    <input 
+                        type="checkbox" 
+                        name={{name}} 
+                        value="{{relation.loc[i,val_field]}}"
+                        {% if relation.loc[i,val_field] in selected_id %} checked="checked" {% endif %}
+                    />
+                </div>
+            {% endfor %}
+        {% endmacro %}
+
+        {% macro render_rooms(relation, selected_room, df_additional_services) %}
+            {% for i in range(len(relation)) %}
+                <div class="flex column padding10px">
+                    <p>Отель: {{relation.loc[i, 'hotel_name']}}</p>
+                    <p>Тип номера: {{relation.loc[i, 'room_type_name']}}</p>
+                    <p>Кол-во человек: {{relation.loc[i, 'room_capacity']}}</p>
+                    <p>Цена: {{relation.loc[i, 'room_price']}}</p>
+                    <p>Свободных номеров: {{relation.loc[i, 'free_room_count']}}</p>
+                    
+                    {% if relation.loc[i, 'free_room_count'] %}
+                        {% if selected_room == i %}
+                            <form action="" method="post">
+                                <p>
+                                    <input type="text" value="{{relation.loc[i, 'room_id']}}" name='room_id' hidden />
+                                    <label>Дата заезда:<br>
+                                        <input type="date" min="{{date_from}}" max="{{date_to}}" value="{{date_from}}" name="check_in_date" />
+                                    </label><br>
+                                    <label>Дата выезда:<br>
+                                        <input type="date" min="{{date_from}}" max="{{date_to}}" value="{{date_to}}" name="check_out_date" />
+                                    </label><br>
+                                    {{ render_checkboxes(df_additional_services, 'additional_services_id', 'additional_services_name', 'additional_services_id') }}
+                                    <p></p>
+                                    <label>Номер телефона<br>
+                                        <input type="text" maxlength="11" name="user_id"/>
+                                    </label>
+                                </p>
+                                <input type="submit" value="Забронировать" name="booking">
+                            </form>
+                        {% else %}
+                            <form action="" method="post">
+                                <input type="text" value="{{i}}" name="selected_room" hidden>
+                                <input type="number" min="{{min_capacity}}" max="{{max_capacity}}" value="{{capacity}}" name="room_capacity" hidden>
+                                <input type="date" min="{{min_date}}" value="{{date_from}}" name="date_from" hidden/>
+                                <input type="date" min="{{min_date}}" value="{{date_to}}" name="date_to" hidden/>
+                                <input type="number" min="0" max={{max_price}} value="{{price_from}}" name="price_from" hidden/>
+                                <input type="number" min="{{min_price}}" max={{max_price}} value="{{price_to}}" name="price_to" hidden/>
+                                <input type="text" value="{{hotels}}" name="hotel_id" hidden />
+                                <input type="text" value="{{room_types}}" name="room_type_id" hidden />
+
+                                <input type="submit" value="Выбрать" name="next">
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <input type="submit" value="Выбрать" disabled>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endmacro %}
+    
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li class="active">
+                    <a href = '{{ url_for("index") }}'>
+                        Поиск номера
+                    </a>
+                </li>
+                <li>
+                    <a href='{{url_for("show")}}'>
+                        Администрирование
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="block">
+            <div class="flex row">
+                <form action="" method="post">
+                    <div class="flex column padding10px">
+                        <div class="flex column padding10px">
+                            <h3>Отели:</h3>
+                            {{ render_checkboxes(df_hotels, 'hotel_id', 'hotel_name', 'hotel_id', hotels) }}
+                        </div>
+                        <p></p>
+                        <div class="flex column padding10px">
+                            <h3>Тип номера:</h3>
+                            {{ render_checkboxes(df_room_types, 'room_type_id', 'room_type_name', 'room_type_id', room_types) }}
+                        </div>
+                        <p></p>
+                        <div class="flex column padding10px">
+                            <h3>Кол-во человек:</h3>
+                            <input type="number" min="{{min_capacity}}" max="{{max_capacity}}" value="{{capacity}}" name="room_capacity"/>
+                        </div>
+                        <p></p>
+                        <div class="flex column padding10px">
+                            <h3>Цена номера:</h3>
+                            <label>от <br>
+                                <input type="number" min="0" max={{max_price}} value="{{price_from}}" name="price_from" />
+                            </label>
+                            <label>до<br>
+                                <input type="number" min="{{min_price}}" max={{max_price}} value="{{price_to}}" name="price_to" />
+                            </label>
+                        </div>
+                        <p></p>
+                        <div class="flex column padding10px">
+                            <h3>Диапазон дат:</h3>
+                            <label>от
+                                <input type="date" min="{{min_date}}" value="{{date_from}}" name="date_from" />
+                            </label><br>
+                            <label>до
+                                <input type="date" min="{{min_date}}" value="{{date_to}}" name="date_to" />
+                            </label>
+                        </div>
+                        <p></p>
+                        <input type="submit" name="find" value="Найти" />
+                    </div>
+                </form>
+                <div class="flex column width85 padding10px">
+                    <h3>Номера:</h3>
+                    <div class="flex row wrap">
+                        {{ render_rooms(df_rooms, selected_room, df_additional_services) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="/static/css/static.css" />
+        <title> Новый гость </title>
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li>
+                    <a href = '{{ url_for("index") }}'>
+                        Поиск номера
+                    </a>
+                </li>
+                <li class="active">
+                    <a href='{{url_for("new_user")}}'>
+                        Новый гость
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class = "block">
+            <p>
+                <form action = '{{ url_for("show") }}' method = "post">
+                    <p>
+                        <label>
+                            Номер телефона:
+                            <input type = "text" name = "user_id" maxlength="11"/>
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            ФИО:
+                            <input type = "text" name = "user_name" />
+                        </label>
+                        
+                    </p>
+                    
+                    <p>
+                        <input type = "submit" value = "Добавить"/>
+                        <input type = "submit" value = "Вернуться" />
+                    </p>
+                </form> 
+            </p>
+        </div>
+    </body>
+</html>
